@@ -1,5 +1,4 @@
 (function() {
-    'use strict';
 
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     var audioElement = document.getElementById('audioElement');
