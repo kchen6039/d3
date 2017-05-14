@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+
+<style>
+.graph-svg-component {
+	background:#002D3C; 
+	float:left;
+}
+</style>
+
+<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+<body>
+<p>
+<a href="index.html">Home</a>
+<a href="index_rect.html">Rectangle</a>
+<a href="index_circle.html">Circle</a>
+<a href="index_canvas.html">Canvas(non D3)</a>
+<a href="index_time.html">Time Domain</a>
+<a href="frequency.html">Frequency Line (Non D3)</a>
+</p>
+
+<!--
+<div id="mp3_player">
+  <div id="audio_box"></div>
+  <canvas id="analyser_render"></canvas>
+</div>
+-->
+<div id="mp3_player">
+	<audio controls loop autoplay id="audioElement" src="singer2.mp3"> 
+	</audio>
+</div>
+
+<script>
+
+var svgHeight = '363';
+var svgWidth = '1300';
+var barPadding = '1';
+
+var svg = d3.select("body").append('svg')
+			 .attr('height', svgHeight)
+			 .attr('width', svgWidth)
+			 .attr("class", "graph-svg-component");
+			 
+// Establish all variables that your Analyser will use
+var canvas, ctx, audioSrc, audioCtx, analyser, frequencyData, bars, bar_x, bar_width, bar_height;
+
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+var audioElement = document.getElementById('audioElement');
+var audioSrc = audioCtx.createMediaElementSource(audioElement);
+var analyser = audioCtx.createAnalyser();
+
+// Bind our analyser to the media element source.
+audioSrc.connect(analyser);
+analyser.connect(audioCtx.destination);
+
+var frequencyData = new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(frequencyData);
+
+// Create our initial D3 chart.
+svg.selectAll('rect')
+   .data(frequencyData)
+   .enter()
+   .append('rect')
+   .attr('x', function (d, i) {
+      return i*8;      //return i * (svgWidth / frequencyData.length) + 2;
+	  
+   })
+   .attr('width', 5);  //.attr('width', svgWidth / (frequencyData.length/16));
+   
+function renderChart() {
+   window.requestAnimationFrame(renderChart);
+
+   // Copy frequency data to frequencyData array.
+   analyser.getByteFrequencyData(frequencyData);
+
+   console.log(frequencyData)
+   // Update d3 chart with new data.
+   
+   svg.selectAll('rect')
+      .data(frequencyData)
+      .attr('y', function(d) {
+         return svgHeight - d;
+      })
+      .attr('height', function(d) {
+         return d;
+      })
+      .attr('fill', function(d) {
+         return 'rgb(0, 204, ' + d + ')';
+      });
+}
+
+// Run the loop
+renderChart();
+    
+/*
+div#mp3_player{ width:1300px; height:400px; background:#000; padding:5px; margin:50px auto; }
+div#mp3_player > div > audio{  width:500px; background:#000; clear: both;  }
+div#mp3_player > canvas{ width:1300px; height:363px; background:#002D3C; float:left; }
+
+// Create a new instance of an audio object and adjust some of its properties
+var audio = new Audio();
+audio.src = 'singer2.mp3';
+audio.controls = true;
+audio.loop = true;
+audio.autoplay = true;
+
+
+// Initialize the MP3 player after the page loads all of its HTML into the window
+window.addEventListener("load", initMp3Player, false);
+
+function initMp3Player(){
+	document.getElementById('audio_box').appendChild(audio);
+	audioCtx = new AudioContext(); // AudioaudioCtx object instance
+	analyser = audioCtx.createAnalyser(); // AnalyserNode method
+	canvas = document.getElementById('analyser_render');
+	ctx = canvas.getContext('2d');
+	// Re-route audio playback into the processing graph of the AudioaudioCtx
+	audioSrc = audioCtx.createMediaElementSource(audio); 
+	audioSrc.connect(analyser);
+	analyser.connect(audioCtx.destination);
+	frameLooper();
+}
+
+// frameLooper() animates any style of graphics you wish to the audio frequency
+// Looping at the default frame rate that the browser provides(approx. 60 FPS)
+
+*/
+</script>
+
+</body>
+</html>
