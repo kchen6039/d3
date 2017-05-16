@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+	<title>Line generator (render to canvas element)</title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<style>
+	div#mp3_player{ width:1500px; height:600px; background:#000; padding:5px; margin:50px auto; }
+	div#mp3_player > div > audio{  width:500px; background:#000; float:left;  }
+	div#mp3_player > canvas{ width:1500px; height:567px; background:#002D3C; float:left; }
+	</style>
+</head>
+
+<body>
+<div id="mp3_player">
+  <div id="audio_box"></div>
+  <canvas id="analyser_render" width="1500" height="600"></canvas>
+</div>
+
+<script>
+
+var audio = new Audio();
+audio.src = 'singer2.mp3';
+audio.controls = true;
+audio.loop = true;
+audio.autoplay = true;
+
+// Establish all variables that your Analyser will use
+var canvas, canvasCtx, source, context, analyser, frequencyData, bars, bar_x, bar_width, bar_height;
+// Initialize the MP3 player after the page loads all of its HTML into the window
+
+document.getElementById('audio_box').appendChild(audio);
+context = new AudioContext(); // AudioContext object instance
+analyser = context.createAnalyser(); // AnalyserNode method
+
+canvas = document.getElementById('analyser_render');
+canvasCtx = d3.select('canvas').node().getContext('2d');
+
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = canvas.width - margin.left - margin.right,
+    height = canvas.height - margin.top - margin.bottom;
+
+// Re-route audio playback into the processing graph of the AudioContext
+source = context.createMediaElementSource(audio); 
+source.connect(analyser);
+analyser.connect(context.destination);
+
+//analyser.fftSize = 2048;
+var bufferLength = analyser.fftSize;
+var dataArray = new Uint8Array(bufferLength);
+analyser.getByteTimeDomainData(dataArray);
+var newDataArray = dataArray.map(function(frequency, index) { 
+			var arr = [];
+			arr.push(index);
+			arr.push(frequency);
+			return arr;
+});
+console.log(newDataArray);
+
+var x = d3.scaleLinear()
+    .range([0, width]);
+
+var y = d3.scaleLinear()
+    .range([height, 0]);
+
+var lineGenerator = d3.line()
+    .x(function(d) { return x(d.index); })
+    .y(function(d) { return y(d.frequency); })
+    .curve(d3.curveStep)
+    .context(canvasCtx);
+
+function draw() {
+	  drawVisual = requestAnimationFrame(draw);
+
+      var amaz = analyser.getByteTimeDomainData(newDataArray);
+	  
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = 'rgb(0, 0, 0)';    //canvasCtx.strokeStyle = '#999';
+      canvasCtx.beginPath();                     //context.beginPath();
+	  
+	  lineGenerator(newDataArray);
+
+      canvasCtx.stroke();                          //context.stroke();
+};
+
+draw();
+
+</script>
+</body>
+</html>
+
+<!--
+var sliceWidth = 1500 / bufferLength;      //lineGenerator(points);
+      var x = 0;
+	  
+      for(var i = 0; i < bufferLength; i++) {
+	    //console.log(dataArray);
+   
+        var v = dataArray[i] / 128.0;
+        var y = v * HEIGHT/2;
+
+        if(i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      canvasCtx.lineTo(canvas.width, canvas.height/2);
+-->
